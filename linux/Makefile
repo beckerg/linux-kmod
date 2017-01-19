@@ -22,11 +22,10 @@ obj-m += ${KMOD_BASE}.o
 .PHONY: all clean cscope etags load tags unload
 
 all:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+	make -C /lib/modules/$(shell uname -r)/build M=$(CURDIR) modules
 
 clean:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
-	rm -rf Module.symvers .tmp_versions
+	make -C /lib/modules/$(shell uname -r)/build M=$(CURDIR) clean
 
 cscope: cscope.out
 
