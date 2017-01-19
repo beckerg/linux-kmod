@@ -1,6 +1,8 @@
 #
 #
 
+CONFIG_MODULE_SIG=n
+
 KMOD_BASE := xx
 
 CSCOPE_DIRS = .
@@ -24,7 +26,7 @@ all:
 
 clean:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
-	rm -f Module.symvers
+	rm -rf Module.symvers .tmp_versions
 
 cscope: cscope.out
 

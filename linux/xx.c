@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Greg Becker.  All rights reserved.
+ * Copyright (c) 2016-2017 Greg Becker.  All rights reserved.
  *
  * The following code implements a skeleton character driver for Linux
  * built for the purpose of exploring the linux kernel and developing
@@ -9,7 +9,7 @@
  * (e.g., /dev/xx1, /dev/xx2, ...) that provide read, write, and mmap
  * interfaces to what is effectively an unbounded in-kernel RAM buffer.
  * (Not really a RAM disk as it does not implement partitioning nor
- * and of the disk ioctls).
+ * any of the disk ioctls).
  */
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -326,16 +326,16 @@ xx_read(struct file *fp, char *ubuf, size_t size, loff_t *loff)
     nleft = size;
 
     while (nleft > 0) {
-        pgoff = *loff >> PAGE_CACHE_SHIFT;
-        offset = *loff - (pgoff << PAGE_CACHE_SHIFT);
-        length = min_t(size_t, PAGE_CACHE_SIZE - offset, nleft);
+        pgoff = *loff >> PAGE_SHIFT;
+        offset = *loff - (pgoff << PAGE_SHIFT);
+        length = min_t(size_t, PAGE_SIZE - offset, nleft);
 
         page = find_lock_page(fp->f_mapping, pgoff);
         if (page) {
             resid = copy_to_user(ubuf, page_address(page) + offset, length);
             unlock_page(page);
 
-            page_cache_release(page);
+            put_page(page);
         } else {
             resid = copy_to_user(ubuf, ZERO_PAGE(pgoff), length);
         }
@@ -366,9 +366,9 @@ xx_write(struct file *fp, const char *ubuf, size_t size, loff_t *loff)
     nleft = size;
 
     while (nleft > 0) {
-        pgoff = *loff >> PAGE_CACHE_SHIFT;
-        offset = *loff - (pgoff << PAGE_CACHE_SHIFT);
-        length = min_t(size_t, PAGE_CACHE_SIZE - offset, nleft);
+        pgoff = *loff >> PAGE_SHIFT;
+        offset = *loff - (pgoff << PAGE_SHIFT);
+        length = min_t(size_t, PAGE_SIZE - offset, nleft);
 
         page = find_or_create_page(fp->f_mapping, pgoff, GFP_KERNEL);
         if (!page)
@@ -380,7 +380,7 @@ xx_write(struct file *fp, const char *ubuf, size_t size, loff_t *loff)
             *loff += (length - resid);
             unlock_page(page);
 
-            page_cache_release(page);
+            put_page(page);
 
             return ((nleft < size) ? (size - nleft) : -EFAULT);
         }
@@ -391,7 +391,7 @@ xx_write(struct file *fp, const char *ubuf, size_t size, loff_t *loff)
         SetPageUptodate(page);
         unlock_page(page);
 
-        page_cache_release(page);
+        put_page(page);
 
         *loff += length;
         nleft -= length;
@@ -446,7 +446,7 @@ xx_vm_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
         return VM_FAULT_OOM;
 
     if (!PageUptodate(page)) {
-        memset(page_address(page), 0, PAGE_CACHE_SIZE);
+        memset(page_address(page), 0, PAGE_SIZE);
         SetPageUptodate(page);
         rc = VM_FAULT_MAJOR;
     }

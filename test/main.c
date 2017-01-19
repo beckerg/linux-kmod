@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2016-2017 Greg Becker.  All rights reserved.
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -7,7 +10,6 @@
 #include <sys/file.h>
 #include <sys/mman.h>
 #include <sys/param.h>
-
 
 const char *progname;
 
@@ -23,12 +25,13 @@ main(int argc, char **argv)
     ssize_t cc;
     int rc;
 
+    progname = argv[0];
+
     if (argc < 3) {
         fprintf(stderr, "usage: %s <file> <length>\n", progname);
         exit(1);
     }
 
-    progname = argv[0];
     devname = argv[1];
     devsz = strtoul(argv[2], NULL, 0);
 
