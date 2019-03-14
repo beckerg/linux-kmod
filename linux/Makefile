@@ -19,10 +19,9 @@ CSCOPE_DIRS += ~/src/glibc
 
 obj-m += ${KMOD_BASE}.o
 
-.PHONY: all clean cscope etags load tags unload
+.PHONY: all clean cscope debug etags load tags unload
 
-all:
-	make -C /lib/modules/$(shell uname -r)/build M=$(CURDIR) modules
+all: ${KMOD_BASE}.ko
 
 clean:
 	make -C /lib/modules/$(shell uname -r)/build M=$(CURDIR) clean
@@ -40,6 +39,12 @@ cscope.files: Makefile
 	fi
 	mv $@.tmp $@
 
+check:
+	true
+
+debug: CFLAGS+=-O0 -g
+debug: ${KMOD_BASE}.ko
+
 load: ${KMOD_BASE}.ko
 	sudo insmod $<
 
@@ -50,3 +55,6 @@ TAGS: cscope.files
 
 unload:
 	sudo rmmod ${KMOD_BASE}
+
+${KMOD_BASE}.ko:
+	make -C /lib/modules/$(shell uname -r)/build M=$(CURDIR) modules

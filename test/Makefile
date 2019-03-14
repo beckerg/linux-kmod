@@ -32,7 +32,7 @@ CSCOPE_DIRS	?= . ${VPATH} /usr/src/lib /usr/src/sys/kern /usr/src/sys/sys
 #
 .DELETE_ON_ERROR:
 
-.PHONY:	all clean clobber cscope tags etags debug
+.PHONY:	all clean clobber cscope check debug etags load tags unload
 
 
 all: ${PROG}
@@ -51,6 +51,9 @@ cscope.out: cscope.files ${HDR} ${SRC} GNUmakefile
 cscope.files: GNUmakefile
 	find ${CSCOPE_DIRS} -name \*.[chsSyl] -o -name \*.cpp > $@
 
+check:
+	./${PROG} /dev/xx1 $$((128*1024*1024))
+
 debug: CFLAGS+=${DEBUG}
 debug: ${PROG}
 
@@ -59,6 +62,12 @@ tags etags: TAGS
 TAGS: cscope.files
 	cat cscope.files | xargs etags -a --members --output=$@
 
+
+load:
+	true
+
+unload:
+	true
 
 # Use gmake's link rule to produce the target.
 #

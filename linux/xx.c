@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Greg Becker.  All rights reserved.
+ * Copyright (c) 2016-2017,2019 Greg Becker.  All rights reserved.
  *
  * The following code implements a skeleton character driver for Linux
  * built for the purpose of exploring the linux kernel and developing
@@ -23,6 +23,13 @@
 #include <linux/buffer_head.h>
 
 #define XX_BASENAME         "xx"
+
+#define HAVE_VM_FAULT_VMAP  1
+#define HAVE_VM_FAULT_T     1
+
+#if !HAVE_VM_FAULT_T
+typedef int vm_fault_t;
+#endif
 
 typedef struct address_space aspace_t;
 typedef struct file_operations fops_t;
@@ -69,7 +76,12 @@ static ssize_t xx_read(struct file *fp, char *ubuf, size_t size, loff_t *loff);
 static ssize_t xx_write(struct file *fp, const char *ubuf, size_t size, loff_t *loff);
 static int xx_mmap(struct file *fp, struct vm_area_struct *vma);
 
-static int xx_vm_fault(struct vm_area_struct *vma, struct vm_fault *vmf);
+#if HAVE_VM_FAULT_VMAP
+static vm_fault_t xx_vm_fault(struct vm_fault *vmf);
+#else
+static vm_fault_t xx_vm_fault(struct vm_area_struct *vma, struct vm_fault *vmf);
+#endif
+
 static void xx_vm_open(struct vm_area_struct *vma);
 static void xx_vm_close(struct vm_area_struct *vma);
 
@@ -431,13 +443,13 @@ xx_vm_close(struct vm_area_struct *vma)
     xx_unit_put(unit);
 }
 
-static int
-xx_vm_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
+static inline vm_fault_t
+xx_vm_fault_impl(struct vm_area_struct *vma, struct vm_fault *vmf)
 {
     struct address_space *mapping = vma->vm_file->f_mapping;
     //struct xx_unit *unit = vma->vm_private_data;
     struct page *page;
-    int rc;
+    vm_fault_t rc;
 
     rc = 0;
 
@@ -456,6 +468,22 @@ xx_vm_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 
     return rc;
 }
+
+#if HAVE_VM_FAULT_VMAP
+static inline vm_fault_t
+xx_vm_fault(struct vm_fault *vmf)
+{
+	return xx_vm_fault_impl(vmf->vma, vmf);
+}
+
+#else
+
+static inline vm_fault_t
+xx_vm_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
+{
+	return xx_vm_fault_impl(vma, vmf);
+}
+#endif
 
 static int
 xx_uevent(struct device *dev, struct kobj_uevent_env *env)
