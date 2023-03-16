@@ -1,5 +1,5 @@
-# skel-xx
-Simple kernel loadable module
+# linux-kmod
+Simple loadable kernel module
 
 The following code implements a skeleton character driver for Linux
 built for the purpose of exploring the linux kernel and developing
